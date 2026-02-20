@@ -175,17 +175,20 @@
     #editbar *{ pointer-events:auto; }
 
     #gridbar{
-  position:absolute; left:0; right:0; bottom:0;
-  z-index: 55;
-  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-  display:none;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
-  justify-content:center;
-  background: linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,0));
-  pointer-events:none;
-}
+      position: fixed;
+      left:0; 
+      right:0; 
+      bottom:0;
+      z-index: 9999;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+      display:none;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,0));
+      pointer-events:none;
+    }
 #gridbar *{ pointer-events:auto; }
 
 #gridbar button{
@@ -982,7 +985,13 @@ function applyNoise(amount){
     const TAP_MOVE_THRESHOLD = 10;
 
     stage.addEventListener("pointerdown", (e)=>{
-      if (e.target.closest(".topbar") || e.target.closest("#editbar") || e.target.closest("#libPanel")) return;
+      if (
+        e.target.closest(".topbar") ||
+        e.target.closest("#editbar") ||
+        e.target.closest("#gridbar") ||   // ✅ 新增
+        e.target.closest("#libPanel")
+      ) return;
+
       if (!video.srcObject) { showHint("先点 Start Camera", 900); return; }
 
       if (e.target.closest(".sticker")) return;
@@ -1073,28 +1082,32 @@ function applyNoise(amount){
         return;
       }
 
-if (captureMode === "grid"){
-  pendingGridRect = { ...roi };
-  gridbar.style.display = "flex";
-  showHint("设置行列后点 done", 900);
-  // GRID 这里先不 hideROI，让你看到外框
-} else if (captureMode === "rect"){
-  await createStickerFromROI(roi, null);
-  hideROI();
-} else if (captureMode === "draw"){
-  await createStickerFromROI(roi, (path.length>=2 ? path : null));
-  hideROI();
-}
+    if (captureMode === "grid"){
+      pendingGridRect = { ...roi };
+      gridbar.style.display = "flex";
+
+      console.log("GRID branch fired. display =", getComputedStyle(gridbar).display);
 
 
-if (captureMode !== "grid"){
-  roi = null; path = []; startPt = null;
-  clearPathPreview();
-} else {
-  // GRID：保留 roiBox 外框，等 done/cancel
-  roi = null; path = []; startPt = null;
-  clearPathPreview();
-}
+      showHint("设置行列后点 done", 900);
+      // GRID 这里先不 hideROI，让你看到外框
+    } else if (captureMode === "rect"){
+      await createStickerFromROI(roi, null);
+      hideROI();
+    } else if (captureMode === "draw"){
+      await createStickerFromROI(roi, (path.length>=2 ? path : null));
+      hideROI();
+    }
+
+
+    if (captureMode !== "grid"){
+      roi = null; path = []; startPt = null;
+      clearPathPreview();
+    } else {
+      // GRID：保留 roiBox 外框，等 done/cancel
+      roi = null; path = []; startPt = null;
+      clearPathPreview();
+    }
 
     }, { passive:false });
 
