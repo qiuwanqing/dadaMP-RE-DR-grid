@@ -282,6 +282,8 @@
 
     <button id="btnUndoObj">Undo Add</button>
     <button id="btnClearAll" class="danger">Clear</button>
+    <button id="btnMotion" class="primary">Enable Motion</button>
+
 
   </div>
 
@@ -1491,6 +1493,27 @@ function applyNoise(amount){
       showHint(facingMode === "user" ? "前置（镜像）" : "后置", 700);
     });
 
+    document.getElementById("btnMotion").addEventListener("click", async ()=>{
+  if (typeof DeviceMotionEvent !== "undefined" &&
+      typeof DeviceMotionEvent.requestPermission === "function") {
+    try {
+      const res = await DeviceMotionEvent.requestPermission();
+      if (res === "granted") {
+        installShake();
+        showHint("motion granted ✓", 1200);
+      } else {
+        showHint("motion denied", 1200);
+      }
+    } catch (e) {
+      showHint("motion error", 1200);
+    }
+  } else {
+    installShake();
+    showHint("motion auto enabled", 1200);
+  }
+});
+
+
     // ===== 全局视频滤镜：事件绑定 =====
     const btnVidBW   = document.getElementById("btnVidBW");
     const btnVidBlur = document.getElementById("btnVidBlur");
@@ -1671,6 +1694,7 @@ function installShake(){
   const GAP = 650;    // 防抖间隔
 
   window.addEventListener("devicemotion", (e)=>{
+    showHint("motion event!", 300);
     const now = Date.now();
     if (now - lastShakeAt < GAP) return;
 
