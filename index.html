@@ -378,7 +378,10 @@
   </div>
 
   <script type="module">
-    import { InteractiveSegmenter, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js";
+    //import { InteractiveSegmenter, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js";
+    
+    import { InteractiveSegmenter, FilesetResolver } from "https://unpkg.com/@mediapipe/tasks-vision@0.10.0/vision_bundle.mjs";
+
 
     const stage = document.getElementById("stage");
     const video = document.getElementById("video");
@@ -574,8 +577,12 @@
     async function initModel(){
       try{
         loader.innerText = "正在下载 WASM…";
-        const vision = await FilesetResolver.forVisionTasks(
+        /*const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+        );*/
+
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://unpkg.com/@mediapipe/tasks-vision@0.10.0/wasm"
         );
 
         async function create(delegate){
