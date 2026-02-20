@@ -129,6 +129,31 @@
       z-index: 9;
     }
 
+    #roiGrid{
+      position:absolute;
+      inset:0;            /* 填满 roiBox */
+      pointer-events:none;
+      display:none;       /* 默认不显示 */
+      /* 网格线：用 CSS 变量控制间距 */
+      background:
+        repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.55) 0,
+          rgba(255,255,255,0.55) 1px,
+          transparent 1px,
+          transparent var(--cellW, 40px)
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.55) 0,
+          rgba(255,255,255,0.55) 1px,
+          transparent 1px,
+          transparent var(--cellH, 40px)
+        );
+      mix-blend-mode: screen; /* 可选：更亮一点 */
+    }
+
+
     #drawLayer{
       position:absolute; inset:0;
       z-index: 8;
@@ -290,7 +315,9 @@
   <div id="stage">
     <video id="video" playsinline muted autoplay></video>
     <canvas id="drawLayer"></canvas>
-    <div id="roiBox"></div>
+    <div id="roiBox">
+      <div id="roiGrid"></div>
+    </div>
 
     <div id="loader">加载模型中…<br/>（加载完后点 Start Camera）</div>
     <div id="hint"></div>
@@ -375,6 +402,8 @@
     const gridColsEl = document.getElementById("gridCols");
     const gridRowsVal = document.getElementById("gridRowsVal");
     const gridColsVal = document.getElementById("gridColsVal");
+    
+    const roiGrid = document.getElementById("roiGrid");
 
     let pendingGridRect = null;
 
@@ -641,6 +670,25 @@
       roiBox.style.height = rect.h + "px";
     }
     function hideROI(){ roiBox.style.display = "none"; }
+
+    function updateRoiGridPreview(){
+      if (!roiGrid || !pendingGridRect) return;
+
+      const rows = parseInt(gridRowsEl.value, 10) || 1;
+      const cols = parseInt(gridColsEl.value, 10) || 1;
+
+      const cellW = pendingGridRect.w / cols;
+      const cellH = pendingGridRect.h / rows;
+
+      roiGrid.style.setProperty("--cellW", cellW + "px");
+      roiGrid.style.setProperty("--cellH", cellH + "px");
+    }
+
+    function showRoiGridPreview(on){
+      if (!roiGrid) return;
+      roiGrid.style.display = on ? "block" : "none";
+    }
+
 
     function cssRectToVideoCrop(cssRect){
       const vw = video.videoWidth, vh = video.videoHeight;
@@ -1087,6 +1135,9 @@ function applyNoise(amount){
     if (captureMode === "grid"){
       pendingGridRect = { ...roi };
       gridbar.style.display = "flex";
+
+      showRoiGridPreview(true);
+      updateRoiGridPreview();
 
       console.log("GRID branch fired. display =", getComputedStyle(gridbar).display);
 
@@ -1627,15 +1678,17 @@ function applyNoise(amount){
     });
 
     function syncGridVals(){
-  gridRowsVal.textContent = String(gridRowsEl.value);
-  gridColsVal.textContent = String(gridColsEl.value);
-}
-gridRowsEl.addEventListener("input", syncGridVals);
-gridColsEl.addEventListener("input", syncGridVals);
-syncGridVals();
+      gridRowsVal.textContent = String(gridRowsEl.value);
+      gridColsVal.textContent = String(gridColsEl.value);
+      updateRoiGridPreview();
+    }
+    gridRowsEl.addEventListener("input", syncGridVals);
+    gridColsEl.addEventListener("input", syncGridVals);
+    syncGridVals();
 
 document.getElementById("btnGridCancel").addEventListener("click", ()=>{
   gridbar.style.display = "none";
+  showRoiGridPreview(false); 
   pendingGridRect = null;
   hideROI();
   showHint("cancel", 700);
@@ -1646,6 +1699,9 @@ document.getElementById("btnGridDone").addEventListener("click", async ()=>{
   const rows = parseInt(gridRowsEl.value, 10) || 1;
   const cols = parseInt(gridColsEl.value, 10) || 1;
   await createGridFromROI(pendingGridRect, rows, cols);
+
+  showRoiGridPreview(false);
+  
   gridbar.style.display = "none";
   pendingGridRect = null;
   hideROI();
